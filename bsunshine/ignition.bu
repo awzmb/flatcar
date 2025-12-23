@@ -1,0 +1,50 @@
+variant: flatcar
+version: 1.0.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFlWNFIAoXzlQRhLVB/5RwUIikiHuefpPchd0ePb5tCM"
+
+systemd:
+  units:
+    - name: locksmithd.service
+      dropins:
+        - name: 50-reboot-strategy.conf
+          contents: |
+            [Service]
+            Environment="REBOOT_STRATEGY=reboot"
+
+    - name: wolf-docker.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Wolf Docker Container
+        Requires=docker.service
+        After=docker.service
+        [Service]
+        TimeoutStartSec=0
+        ExecStartPre=-/usr/bin/docker rm -f wolf
+        ExecStart=/usr/bin/docker run --name wolf --network=host -v /etc/wolf:/etc/wolf:rw -v /var/run/docker.sock:/var/run/docker.sock:rw --device /dev/dri/ --device /dev/uinput --device /dev/uhid -v /dev/:/dev/:rw -v /run/udev:/run/udev:rw --device-cgroup-rule "c 13:* rmw" ghcr.io/games-on-whales/wolf:stable
+        Restart=always
+        RestartSec=10
+        [Install]
+        WantedBy=multi-user.target
+
+storage:
+  files:
+    - path: /etc/udev/rules.d/85-wolf-virtual-inputs.rules
+      contents:
+        inline: |
+          # Allows Wolf to acces /dev/uinput (only needed for joypad support)
+          KERNEL=="uinput", SUBSYSTEM=="misc", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput", TAG+="uaccess"
+
+          # Allows Wolf to access /dev/uhid (only needed for DualSense emulation)
+          KERNEL=="uhid", GROUP="input", MODE="0660", TAG+="uaccess"
+
+          # Joypads
+          KERNEL=="hidraw*", ATTRS{name}=="Wolf PS5 (virtual) pad", GROUP="input", MODE="0660", ENV{ID_SEAT}="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf X-Box One (virtual) pad", MODE="0660", ENV{ID_SEAT}="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf PS5 (virtual) pad", MODE="0660", ENV{ID_SEAT}="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf gamepad (virtual) motion sensors", MODE="0660", ENV{ID_SEAT}="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf Nintendo (virtual) pad", MODE="0660", ENV{ID_SEAT}="seat9"

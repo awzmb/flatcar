@@ -1,0 +1,44 @@
+{
+  "ignition": {
+    "version": "3.3.0"
+  },
+  "passwd": {
+    "users": [
+      {
+        "name": "core",
+        "sshAuthorizedKeys": [
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFlWNFIAoXzlQRhLVB/5RwUIikiHuefpPchd0ePb5tCM"
+        ]
+      }
+    ]
+  },
+  "storage": {
+    "files": [
+      {
+        "path": "/etc/udev/rules.d/85-wolf-virtual-inputs.rules",
+        "contents": {
+          "compression": "gzip",
+          "source": "data:;base64,H4sIAAAAAAAC/6ySTW/iMBCG7/kVo9kLLFnBZZH24EMQEWJbEoRDP07IiofiKrGj2IYixH+voAJaBalSxd3zPs+8nl8QFYXZWHg0xRKcAZHnZKErad31SlfeQcvoYguaSJKEpanh1WwrIcH6qjK1awd38SyJ7xnDjwEMgc8H/Jln8YQxLJXNMYRJOowZ9vr9HoYwmqXzKcPT83SajdOEdxhaJ5zKF9pIYue0LBp1GPqjmcUguO58kl4p2VQeelFw0paASl8Ip4z+7L1Ssmn1xbjp8P/Ygr2krJSsxeY3hhBl2YzvtChpzxgeLaf8L7TWqnZeFG2oxHe8OHnYjYcLHkfZnqEl4f5hcK6Vs8vYFdjTn4F5g1RTA3k7xrWFbpf+Iko63NiFUJrDp4ElbU1tbwpLlHakpfnBPu8BAAD//+CGECw/AwAA"
+        }
+      }
+    ]
+  },
+  "systemd": {
+    "units": [
+      {
+        "dropins": [
+          {
+            "contents": "[Service]\nEnvironment=\"REBOOT_STRATEGY=reboot\"\n",
+            "name": "50-reboot-strategy.conf"
+          }
+        ],
+        "name": "locksmithd.service"
+      },
+      {
+        "contents": "[Unit]\nDescription=Wolf Docker Container\nRequires=docker.service\nAfter=docker.service\n[Service]\nTimeoutStartSec=0\nExecStartPre=-/usr/bin/docker rm -f wolf\nExecStart=/usr/bin/docker run --name wolf --network=host -v /etc/wolf:/etc/wolf:rw -v /var/run/docker.sock:/var/run/docker.sock:rw --device /dev/dri/ --device /dev/uinput --device /dev/uhid -v /dev/:/dev/:rw -v /run/udev:/run/udev:rw --device-cgroup-rule \"c 13:* rmw\" ghcr.io/games-on-whales/wolf:stable\nRestart=always\nRestartSec=10\n[Install]\nWantedBy=multi-user.target\n",
+        "enabled": true,
+        "name": "wolf-docker.service"
+      }
+    ]
+  }
+}
