@@ -1,28 +1,44 @@
 variant: fcos
-version: 1.1.0
+version: 1.6.0
 passwd:
   users:
     - name: core
-      ssh_authorized_keys:
-        - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFlWNFIAoXzlQRhLVB/5RwUIikiHuefpPchd0ePb5tCM"
+      ssh_authorized_keys: ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFlWNFIAoXzlQRhLVB/5RwUIikiHuefpPchd0ePb5tCM"]
+
 storage:
+  directories:
+    - path: /etc/wolf
+      mode: 0755
+
   files:
+    - path: /etc/hostname
+      mode: 0644
+      overwrite: true
+      contents:
+        inline: bsunshine
+
     - path: /etc/udev/rules.d/85-wolf-virtual-inputs.rules
       mode: 0644
       contents:
         inline: |
           # Allows Wolf to access /dev/uinput (only needed for joypad support)
-          KERNEL=="uinput", SUBSYSTEM=="misc", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput", TAG+="uaccess"
+          KERNEL=="uinput", SUBSYSTEM=="misc", MODE=="0660", GROUP=="input", OPTIONS+="static_node=uinput", TAG+="uaccess"
 
           # Allows Wolf to access /dev/uhid (only needed for DualSense emulation)
-          KERNEL=="uhid", GROUP="input", MODE="0660", TAG+="uaccess"
+          KERNEL=="uhid", GROUP=="input", MODE=="0660", TAG+="uaccess"
 
           # Joypads
-          KERNEL=="hidraw*", ATTRS{name}=="Wolf PS5 (virtual) pad", GROUP="input", MODE="0660", ENV{ID_SEAT}="seat9"
-          SUBSYSTEMS=="input", ATTRS{name}=="Wolf X-Box One (virtual) pad", MODE="0660", ENV{ID_SEAT}="seat9"
-          SUBSYSTEMS=="input", ATTRS{name}=="Wolf PS5 (virtual) pad", MODE="0660", ENV{ID_SEAT}="seat9"
-          SUBSYSTEMS=="input", ATTRS{name}=="Wolf gamepad (virtual) motion sensors", MODE="0660", ENV{ID_SEAT}="seat9"
-          SUBSYSTEMS=="input", ATTRS{name}=="Wolf Nintendo (virtual) pad", MODE="0660", ENV{ID_SEAT}="seat9"
+          KERNEL=="hidraw*", ATTRS{name}=="Wolf PS5 (virtual) pad", GROUP=="input", MODE=="0660", ENV{ID_SEAT}=="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf X-Box One (virtual) pad", MODE=="0660", ENV{ID_SEAT}=="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf PS5 (virtual) pad", MODE=="0660", ENV{ID_SEAT}=="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf gamepad (virtual) motion sensors", MODE=="0660", ENV{ID_SEAT}=="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf Nintendo (virtual) pad", MODE=="0660", ENV{ID_SEAT}=="seat9"
+
+    - path: /etc/sysctl.d/11-max-map-count.conf
+      mode: 0644
+      contents:
+        inline: |
+          vm.max_map_count = 2147483642
 
     - path: /usr/local/bin/install-gpu-drivers.sh
       mode: 0755
@@ -35,41 +51,56 @@ storage:
           echo "Installing GPU drivers and utilities via rpm-ostree..."
           rpm-ostree install \
             vulkan-loader \
-            mesa-vukan-drivers \
+            mesa-vulkan-drivers \
             mesa-dri-drivers \
             libva-utils \
-            vdpauinfo
+            vdpauinfo \
+            mesa-va-drivers-freeworld \
+            mesa-vdpau-drivers-freeworld
 
           echo
           echo
           echo "DRIVER INSTALLING COMPLETE. Rebooting the system to apply changes..."
           systemctl --no-block reboot
+          
+    - path: /etc/containers/systemd/wolf.container
+      mode: 0644
+      contents:
+        inline: |
+          [Unit]
+          Description=Wolf / Games On Whales
+          Requires=network-online.target podman.socket
+          After=network-online.target podman.socket
+
+          [Service]
+          TimeoutStartSec=900
+          ExecStartPre=-/usr/bin/podman rm --force WolfPulseAudio
+          Restart=on-failure
+          RestartSec=5
+          StartLimitBurst=5
+
+          [Container]
+          AutoUpdate=registry
+          ContainerName=%p
+          HostName=%p
+          Image=ghcr.io/games-on-whales/wolf:stable
+          Network=host
+          SecurityLabelDisable=true
+          PodmanArgs=--ipc=host --device-cgroup-rule "c 13:* rmw"
+          AddDevice=/dev/dri
+          AddDevice=/dev/uinput
+          AddDevice=/dev/uhid
+          Volume=/dev/:/dev/:rw
+          Volume=/run/udev:/run/udev:rw
+          Volume=/etc/wolf/:/etc/wolf:z
+          Volume=/run/podman/podman.sock:/var/run/docker.sock:ro
+          Environment=WOLF_STOP_CONTAINER_ON_EXIT=TRUE
+
+          [Install]
+          WantedBy=multi-user.target
 
 systemd:
   units:
-    - name: locksmithd.service
-      dropins:
-        - name: 50-reboot-strategy.conf
-          contents: |
-            [Service]
-            Environment="REBOOT_STRATEGY=reboot"
-
-    - name: wolf-docker.service
-      enabled: true
-      contents: |
-        [Unit]
-        Description=Wolf Docker Container
-        Requires=docker.service
-        After=docker.service
-        [Service]
-        TimeoutStartSec=0
-        ExecStartPre=-/usr/bin/docker rm -f wolf
-        ExecStart=/usr/bin/docker run --name wolf --network=host -v /etc/wolf:/etc/wolf:rw -v /var/run/docker.sock:/var/run/docker.sock:rw --device /dev/dri/ --device /dev/uinput --device /dev/uhid -v /dev/:/dev/:rw -v /run/udev:/run/udev:rw --device-cgroup-rule "c 13:* rmw" ghcr.io/games-on-whales/wolf:stable
-        Restart=always
-        RestartSec=10
-        [Install]
-        WantedBy=multi-user.target
-
     - name: install-gpu-drivers.service
       enabled: true
       contents: |
@@ -93,17 +124,38 @@ systemd:
       enabled: true
       contents: |
         [Unit]
-        Description=Layer vim with rpm-ostree
+        Description=Layer additional software with rpm-ostree
         Wants=network-online.target
         After=network-online.target
         Before=zincati.service
         ConditionPathExists=!/var/lib/%N.stamp
-        
+
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive open-vm-tools rsync neovim zsh
+        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive open-vm-tools rsync neovim zsh gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugins-bad-free-extras gstreamer1-vaapi
         ExecStart=/bin/touch /var/lib/%N.stamp
-        
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: disable-selinux.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Disable SELinux on first boot
+        # This service should run on first boot to set the kernel arguments.
+        # The change will be effective on the next reboot, which is triggered
+        # by the GPU driver installation service.
+        ConditionPathExists=!/var/lib/selinux-disabled.stamp
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        # Set the kernel argument to disable SELinux
+        ExecStart=/usr/bin/rpm-ostree kargs --append=selinux=0
+        # Create a stamp file to prevent this service from running again
+        ExecStartPost=/usr/bin/touch /var/lib/selinux-disabled.stamp
+
         [Install]
         WantedBy=multi-user.target

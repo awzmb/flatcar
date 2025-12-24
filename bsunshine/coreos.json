@@ -1,6 +1,6 @@
 {
   "ignition": {
-    "version": "3.1.0"
+    "version": "3.5.0"
   },
   "passwd": {
     "users": [
@@ -13,12 +13,35 @@
     ]
   },
   "storage": {
+    "directories": [
+      {
+        "path": "/etc/wolf",
+        "mode": 493
+      }
+    ],
     "files": [
+      {
+        "overwrite": true,
+        "path": "/etc/hostname",
+        "contents": {
+          "compression": "",
+          "source": "data:,bsunshine"
+        },
+        "mode": 420
+      },
       {
         "path": "/etc/udev/rules.d/85-wolf-virtual-inputs.rules",
         "contents": {
           "compression": "gzip",
-          "source": "data:;base64,H4sIAAAAAAAC/6ySTWvCQBCG7/kVw/SiNUUvFXrYQ8QgtjURN/bjJEt2rFuS3ZDdaEX870Wl2hJpoXjfeZ9n3p0rCLLMrCw8m2wOzoBIU7IW2pKW7UrponLQMDpbgyaSJGFuSng360JIsFVRmNI1vYdwEoWPjOFhAH3g0x5/5Uk4YgxzZVP0YRT3Q4adbreDPgwm8XTM8Ot5PE6GccRbDK0TTqUzbSSxY1oSDFoMq4Maet7v0gsl68r9SmSctCWgvMqEU0Z/914oWbf6YVx3uN+3YE8pCyVLsbpGH4IkmfCNFjltGcO95ZjfQmOpSleJrAmF+IsXRk+bYX/GwyDZMrQk3B16x1o5O42dgb3c9MwHxJpqyMsxzi10ufQ3kdPuxk6E3Ow+DSxpa0p7UViktCMtzT/2+QwAAP//7PFGUkADAAA="
+          "source": "data:;base64,H4sIAAAAAAAC/6yST2vCMBjG7/0UL9lFZ4deJuyQQ8UibrMVU/fnJKF5nRlpUppEJ7LvPlSmDmWD0Q/wPL/f+yRXECllVhaejZqDM8DzHK2FtsBl20tdegcNo9UaNKJAAXNTwbtZl1yA9WVpKtcMHuJJEj9SSvYBEgKb9tgry+IRpaSQNichjNJ+TCnpdLsdEsJgkk7HlJLvQDrOhmnCWpRYx53MZ9oIpIe+LBq0KPF7ORIEv2svpDiX7nuuGGqLgIVX3EmjT80XUlzQ+il9bnG/W8IeexZSVHx1TUKIsmzCNpoX+Ekp2XmO2S00lrJynqsmlPxvYpw8bYb9GYujbNtikbs7EhzWZSfBC7yXm575gFTjGbVOyqWr6ux/4wVuv9uRUZjt64FFbU1la8YlUjvUwvzrpq8AAAD//yvsiyVPAwAA"
+        },
+        "mode": 420
+      },
+      {
+        "path": "/etc/sysctl.d/11-max-map-count.conf",
+        "contents": {
+          "compression": "",
+          "source": "data:,vm.max_map_count%20%3D%202147483642%0A"
         },
         "mode": 420
       },
@@ -26,37 +49,36 @@
         "path": "/usr/local/bin/install-gpu-drivers.sh",
         "contents": {
           "compression": "gzip",
-          "source": "data:;base64,H4sIAAAAAAAC/1SQzW7CMBCE736KKZwdnqGiFEWigID21MsmXpIVxnb9E4m3rxJEUS+W5rN2dmbnL4tG3KKh1KvEGZqLR5DAZxKr1BynXhJSGyVkiEuZrE3IPSPyT5HIBl0oOrKlzAaB2gt1nOAd3tn4SFj6yLuj4rb3mNV3B3Ed1vtPmCgDxwRyBiWLlSycMAghhqv2KUfmqqpm6ikfIfCtgKHYCzltPRmOE7lyIj2UkT7M/7CJ8g9aaQbS4967HkygIu7s1ZT2+WD2dqi/VgfU2+PpdbOpt2ssdx/7zeq0qnDgxvs8VhrPkm4p8xXZg0KwN7Q9uY7T1OL+12YLrZ3XjfXtBXEaV78BAAD//yPvyiyJAQAA"
+          "source": "data:;base64,H4sIAAAAAAAC/2SQwW7yMBCE736K+eHs8Ay/KEWRKCCgPfWyiZdkhbFd20nF21cJpVD1Ymm/8Yy9M/03q8TNKkqtSpyhufMIEvhIYpWa4tBKQqqjhAxxKZO1CbllRP7oJLJBEzod2VJmg0D1iRpO8A7PbHwkzH3kzV5x3XpMymuCuAbL7StMlJ5jAjmDLouVLJzQCyGGs/YpR+aiKCbqPt4+gXcF9J09kdPWk+E4kjMn0t/4lv7DTZRf0ErVkx4evs69CdSJO/qHKLo59DEyf/pozYM6GP5eUOO29wOTp135ttihXO8P/1ercr3EfPOyXS0OiwI7rrzPQyVDremSMp+RPSgEe0Hdkms4jS1ctTpbaO28rqyvT4ijXX0FAAD//+Si0nHJAQAA"
         },
         "mode": 493
+      },
+      {
+        "path": "/etc/containers/systemd/wolf.container",
+        "contents": {
+          "compression": "gzip",
+          "source": "data:;base64,H4sIAAAAAAAC/4ySQWsbPRCG7/oVIvBdPlCUUnLogg6bxG0NwTa2UxeMMYo0Xg/RStvRyG7668uuEzdtL72I4Zl3Bs07s36IyBtxB9kRdowpmlUKO6nlJ9tCltMoV3sbIIs5fCtIkE0EPiZ6UikGjHDJlhpg2SXf2niZk3sCFvWOgf5JKdYLoAM62IgltpAKL9gSL8CZD1dXYvQd3ABmBEbpkkk/YtSnHpJaqdQukQPZ/3pWQoa6eExiDrmvMimqncVQCF5R3/laDD3vsUW+KZTZXAuxvk2RLUagjagLp4fOWwZD0GBmehbn9MS2YP7rxOeU+TUet7YB0+wdXWLSTe+dSlEdB+/0MYVdldk+BhCTkylmnzKLBbhCyM/39hHCHeZeYZgKiNkwYU1NNkph5wa9VMpDb5ZyDaXSKSoB5IWT795X/0tqjxei9v5ukBjt4aA94Z+oYOwK/0X36MWXFEr7AqrTS8czpRJ18XCofkVvssBumFNX57D68VvtaWn6zf4rfbA05Hx/DXSClMQoHpBSbCGyWU3vP24Xy+lsezudLOvxZDTfTifb0dfx0iznDyMh1uOY2YawESsbGfzNs2lLYFQlA72cnfgZAAD//78ufJ3qAgAA"
+        },
+        "mode": 420
       }
     ]
   },
   "systemd": {
     "units": [
       {
-        "dropins": [
-          {
-            "contents": "[Service]\nEnvironment=\"REBOOT_STRATEGY=reboot\"\n",
-            "name": "50-reboot-strategy.conf"
-          }
-        ],
-        "name": "locksmithd.service"
-      },
-      {
-        "contents": "[Unit]\nDescription=Wolf Docker Container\nRequires=docker.service\nAfter=docker.service\n[Service]\nTimeoutStartSec=0\nExecStartPre=-/usr/bin/docker rm -f wolf\nExecStart=/usr/bin/docker run --name wolf --network=host -v /etc/wolf:/etc/wolf:rw -v /var/run/docker.sock:/var/run/docker.sock:rw --device /dev/dri/ --device /dev/uinput --device /dev/uhid -v /dev/:/dev/:rw -v /run/udev:/run/udev:rw --device-cgroup-rule \"c 13:* rmw\" ghcr.io/games-on-whales/wolf:stable\nRestart=always\nRestartSec=10\n[Install]\nWantedBy=multi-user.target\n",
-        "enabled": true,
-        "name": "wolf-docker.service"
-      },
-      {
         "contents": "[Unit]\nDescription=Install AMD GPU drivers on first boot\nWants=network-online.target\nAfter=network-online.target\n# This service only runs once\nConditionPathExists=!/var/lib/gpu-drivers-installed\n\n[Service]\nType=oneshot\n# Create a lock file to prevent this service from running again\nExecStartPre=/usr/bin/touch /var/lib/gpu-drivers-installed\nExecStart=/usr/local/bin/install-gpu-drivers.sh\n\n[Install]\nWantedBy=multi-user.target\n",
         "enabled": true,
         "name": "install-gpu-drivers.service"
       },
       {
-        "contents": "[Unit]\nDescription=Layer vim with rpm-ostree\nWants=network-online.target\nAfter=network-online.target\nBefore=zincati.service\nConditionPathExists=!/var/lib/%N.stamp\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive open-vm-tools rsync neovim zsh\nExecStart=/bin/touch /var/lib/%N.stamp\n\n[Install]\nWantedBy=multi-user.target\n",
+        "contents": "[Unit]\nDescription=Layer additional software with rpm-ostree\nWants=network-online.target\nAfter=network-online.target\nBefore=zincati.service\nConditionPathExists=!/var/lib/%N.stamp\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive open-vm-tools rsync neovim zsh gstreamer1-plugins-base gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugins-bad-free-extras gstreamer1-vaapi\nExecStart=/bin/touch /var/lib/%N.stamp\n\n[Install]\nWantedBy=multi-user.target\n",
         "enabled": true,
         "name": "install-software.service"
+      },
+      {
+        "contents": "[Unit]\nDescription=Disable SELinux on first boot\n# This service should run on first boot to set the kernel arguments.\n# The change will be effective on the next reboot, which is triggered\n# by the GPU driver installation service.\nConditionPathExists=!/var/lib/selinux-disabled.stamp\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\n# Set the kernel argument to disable SELinux\nExecStart=/usr/bin/rpm-ostree kargs --append=selinux=0\n# Create a stamp file to prevent this service from running again\nExecStartPost=/usr/bin/touch /var/lib/selinux-disabled.stamp\n\n[Install]\nWantedBy=multi-user.target\n",
+        "enabled": true,
+        "name": "disable-selinux.service"
       }
     ]
   }
