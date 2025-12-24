@@ -1,0 +1,63 @@
+{
+  "ignition": {
+    "version": "3.1.0"
+  },
+  "passwd": {
+    "users": [
+      {
+        "name": "core",
+        "sshAuthorizedKeys": [
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFlWNFIAoXzlQRhLVB/5RwUIikiHuefpPchd0ePb5tCM"
+        ]
+      }
+    ]
+  },
+  "storage": {
+    "files": [
+      {
+        "path": "/etc/udev/rules.d/85-wolf-virtual-inputs.rules",
+        "contents": {
+          "compression": "gzip",
+          "source": "data:;base64,H4sIAAAAAAAC/6ySTWvCQBCG7/kVw/SiNUUvFXrYQ8QgtjURN/bjJEt2rFuS3ZDdaEX870Wl2hJpoXjfeZ9n3p0rCLLMrCw8m2wOzoBIU7IW2pKW7UrponLQMDpbgyaSJGFuSng360JIsFVRmNI1vYdwEoWPjOFhAH3g0x5/5Uk4YgxzZVP0YRT3Q4adbreDPgwm8XTM8Ot5PE6GccRbDK0TTqUzbSSxY1oSDFoMq4Maet7v0gsl68r9SmSctCWgvMqEU0Z/914oWbf6YVx3uN+3YE8pCyVLsbpGH4IkmfCNFjltGcO95ZjfQmOpSleJrAmF+IsXRk+bYX/GwyDZMrQk3B16x1o5O42dgb3c9MwHxJpqyMsxzi10ufQ3kdPuxk6E3Ow+DSxpa0p7UViktCMtzT/2+QwAAP//7PFGUkADAAA="
+        },
+        "mode": 420
+      },
+      {
+        "path": "/usr/local/bin/install-gpu-drivers.sh",
+        "contents": {
+          "compression": "gzip",
+          "source": "data:;base64,H4sIAAAAAAAC/1SQzW7CMBCE736KKZwdnqGiFEWigID21MsmXpIVxnb9E4m3rxJEUS+W5rN2dmbnL4tG3KKh1KvEGZqLR5DAZxKr1BynXhJSGyVkiEuZrE3IPSPyT5HIBl0oOrKlzAaB2gt1nOAd3tn4SFj6yLuj4rb3mNV3B3Ed1vtPmCgDxwRyBiWLlSycMAghhqv2KUfmqqpm6ikfIfCtgKHYCzltPRmOE7lyIj2UkT7M/7CJ8g9aaQbS4967HkygIu7s1ZT2+WD2dqi/VgfU2+PpdbOpt2ssdx/7zeq0qnDgxvs8VhrPkm4p8xXZg0KwN7Q9uY7T1OL+12YLrZ3XjfXtBXEaV78BAAD//yPvyiyJAQAA"
+        },
+        "mode": 493
+      }
+    ]
+  },
+  "systemd": {
+    "units": [
+      {
+        "dropins": [
+          {
+            "contents": "[Service]\nEnvironment=\"REBOOT_STRATEGY=reboot\"\n",
+            "name": "50-reboot-strategy.conf"
+          }
+        ],
+        "name": "locksmithd.service"
+      },
+      {
+        "contents": "[Unit]\nDescription=Wolf Docker Container\nRequires=docker.service\nAfter=docker.service\n[Service]\nTimeoutStartSec=0\nExecStartPre=-/usr/bin/docker rm -f wolf\nExecStart=/usr/bin/docker run --name wolf --network=host -v /etc/wolf:/etc/wolf:rw -v /var/run/docker.sock:/var/run/docker.sock:rw --device /dev/dri/ --device /dev/uinput --device /dev/uhid -v /dev/:/dev/:rw -v /run/udev:/run/udev:rw --device-cgroup-rule \"c 13:* rmw\" ghcr.io/games-on-whales/wolf:stable\nRestart=always\nRestartSec=10\n[Install]\nWantedBy=multi-user.target\n",
+        "enabled": true,
+        "name": "wolf-docker.service"
+      },
+      {
+        "contents": "[Unit]\nDescription=Install AMD GPU drivers on first boot\nWants=network-online.target\nAfter=network-online.target\n# This service only runs once\nConditionPathExists=!/var/lib/gpu-drivers-installed\n\n[Service]\nType=oneshot\n# Create a lock file to prevent this service from running again\nExecStartPre=/usr/bin/touch /var/lib/gpu-drivers-installed\nExecStart=/usr/local/bin/install-gpu-drivers.sh\n\n[Install]\nWantedBy=multi-user.target\n",
+        "enabled": true,
+        "name": "install-gpu-drivers.service"
+      },
+      {
+        "contents": "[Unit]\nDescription=Layer vim with rpm-ostree\nWants=network-online.target\nAfter=network-online.target\nBefore=zincati.service\nConditionPathExists=!/var/lib/%N.stamp\n\n[Service]\nType=oneshot\nRemainAfterExit=yes\nExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive open-vm-tools rsync neovim zsh\nExecStart=/bin/touch /var/lib/%N.stamp\n\n[Install]\nWantedBy=multi-user.target\n",
+        "enabled": true,
+        "name": "install-software.service"
+      }
+    ]
+  }
+}

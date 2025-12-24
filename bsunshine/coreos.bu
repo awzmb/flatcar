@@ -1,0 +1,109 @@
+variant: fcos
+version: 1.1.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFlWNFIAoXzlQRhLVB/5RwUIikiHuefpPchd0ePb5tCM"
+storage:
+  files:
+    - path: /etc/udev/rules.d/85-wolf-virtual-inputs.rules
+      mode: 0644
+      contents:
+        inline: |
+          # Allows Wolf to access /dev/uinput (only needed for joypad support)
+          KERNEL=="uinput", SUBSYSTEM=="misc", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput", TAG+="uaccess"
+
+          # Allows Wolf to access /dev/uhid (only needed for DualSense emulation)
+          KERNEL=="uhid", GROUP="input", MODE="0660", TAG+="uaccess"
+
+          # Joypads
+          KERNEL=="hidraw*", ATTRS{name}=="Wolf PS5 (virtual) pad", GROUP="input", MODE="0660", ENV{ID_SEAT}="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf X-Box One (virtual) pad", MODE="0660", ENV{ID_SEAT}="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf PS5 (virtual) pad", MODE="0660", ENV{ID_SEAT}="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf gamepad (virtual) motion sensors", MODE="0660", ENV{ID_SEAT}="seat9"
+          SUBSYSTEMS=="input", ATTRS{name}=="Wolf Nintendo (virtual) pad", MODE="0660", ENV{ID_SEAT}="seat9"
+
+    - path: /usr/local/bin/install-gpu-drivers.sh
+      mode: 0755
+      contents:
+        inline: |
+          #!/bin/bash
+          set -euo pipefail
+
+          # This script installs the required gpu-related packages on Fedora CoreOS
+          echo "Installing GPU drivers and utilities via rpm-ostree..."
+          rpm-ostree install \
+            vulkan-loader \
+            mesa-vukan-drivers \
+            mesa-dri-drivers \
+            libva-utils \
+            vdpauinfo
+
+          echo
+          echo
+          echo "DRIVER INSTALLING COMPLETE. Rebooting the system to apply changes..."
+          systemctl --no-block reboot
+
+systemd:
+  units:
+    - name: locksmithd.service
+      dropins:
+        - name: 50-reboot-strategy.conf
+          contents: |
+            [Service]
+            Environment="REBOOT_STRATEGY=reboot"
+
+    - name: wolf-docker.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Wolf Docker Container
+        Requires=docker.service
+        After=docker.service
+        [Service]
+        TimeoutStartSec=0
+        ExecStartPre=-/usr/bin/docker rm -f wolf
+        ExecStart=/usr/bin/docker run --name wolf --network=host -v /etc/wolf:/etc/wolf:rw -v /var/run/docker.sock:/var/run/docker.sock:rw --device /dev/dri/ --device /dev/uinput --device /dev/uhid -v /dev/:/dev/:rw -v /run/udev:/run/udev:rw --device-cgroup-rule "c 13:* rmw" ghcr.io/games-on-whales/wolf:stable
+        Restart=always
+        RestartSec=10
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: install-gpu-drivers.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Install AMD GPU drivers on first boot
+        Wants=network-online.target
+        After=network-online.target
+        # This service only runs once
+        ConditionPathExists=!/var/lib/gpu-drivers-installed
+
+        [Service]
+        Type=oneshot
+        # Create a lock file to prevent this service from running again
+        ExecStartPre=/usr/bin/touch /var/lib/gpu-drivers-installed
+        ExecStart=/usr/local/bin/install-gpu-drivers.sh
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: install-software.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Layer vim with rpm-ostree
+        Wants=network-online.target
+        After=network-online.target
+        Before=zincati.service
+        ConditionPathExists=!/var/lib/%N.stamp
+        
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive open-vm-tools rsync neovim zsh
+        ExecStart=/bin/touch /var/lib/%N.stamp
+        
+        [Install]
+        WantedBy=multi-user.target

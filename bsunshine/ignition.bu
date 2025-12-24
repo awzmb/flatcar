@@ -36,7 +36,7 @@ storage:
     - path: /etc/udev/rules.d/85-wolf-virtual-inputs.rules
       contents:
         inline: |
-          # Allows Wolf to acces /dev/uinput (only needed for joypad support)
+          # Allows Wolf to access /dev/uinput (only needed for joypad support)
           KERNEL=="uinput", SUBSYSTEM=="misc", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput", TAG+="uaccess"
 
           # Allows Wolf to access /dev/uhid (only needed for DualSense emulation)
